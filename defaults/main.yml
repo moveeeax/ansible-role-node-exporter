@@ -1,2 +1,38 @@
 ---
 # defaults file for ansible-role-node-exporter
+
+# Version of node_exporter to install.
+node_exporter_version: "1.1.2"
+
+# Target architecture used to build the release archive name.
+node_exporter_arch: "amd64"
+
+# Release archive name and download URL.
+node_exporter_archive: "node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+node_exporter_download_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_archive }}"
+
+# Installation layout.
+node_exporter_install_dir: "/opt/node_exporter"
+node_exporter_version_dir: "{{ node_exporter_install_dir }}/node_exporter-{{ node_exporter_version }}"
+node_exporter_binary: "{{ node_exporter_install_dir }}/current/node_exporter"
+
+# System user and group the service runs as.
+node_exporter_user: "node_exporter"
+node_exporter_group: "node_exporter"
+
+# Address the exporter listens on.
+node_exporter_listen_address: "0.0.0.0:9100"
+
+# Metrics path exposed by the exporter.
+node_exporter_metrics_path: "/metrics"
+
+# Collectors to explicitly enable. Rendered as --collector.<name> flags.
+node_exporter_enabled_collectors:
+  - systemd
+  - textfile
+
+# Collectors to explicitly disable. Rendered as --no-collector.<name> flags.
+node_exporter_disabled_collectors: []
+
+# Any additional raw command-line flags to append.
+node_exporter_extra_flags: []
