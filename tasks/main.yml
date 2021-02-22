@@ -3,3 +3,6 @@
 
 - name: Create service account
   ansible.builtin.import_tasks: user.yml
+
+- name: Install node_exporter binary
+  ansible.builtin.import_tasks: install.yml
