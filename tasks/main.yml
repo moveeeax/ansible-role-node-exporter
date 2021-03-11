@@ -6,3 +6,6 @@
 
 - name: Install node_exporter binary
   ansible.builtin.import_tasks: install.yml
+
+- name: Configure node_exporter service
+  ansible.builtin.import_tasks: service.yml
