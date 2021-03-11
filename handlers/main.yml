@@ -1,2 +1,11 @@
 ---
 # handlers file for ansible-role-node-exporter
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart node_exporter
+  ansible.builtin.systemd:
+    name: node_exporter
+    state: restarted
