@@ -1,2 +1,25 @@
 ---
-# meta file for ansible-role-node-exporter
+galaxy_info:
+  role_name: node_exporter
+  author: Michael Tarassov
+  description: Install and configure the Prometheus node_exporter as a systemd service
+  company: ""
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: EL
+      versions:
+        - "7"
+        - "8"
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+  galaxy_tags:
+    - monitoring
+    - prometheus
+    - node_exporter
+    - metrics
+    - systemd
+
+dependencies: []
