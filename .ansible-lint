@@ -1,0 +1,13 @@
+---
+# ansible-lint configuration for ansible-role-node-exporter
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - .molecule/
+
+skip_list:
+  # Role is distributed via Galaxy, not as a namespaced collection.
+  - role-name
+
+use_default_rules: true
