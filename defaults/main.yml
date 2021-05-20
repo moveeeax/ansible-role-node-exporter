@@ -11,6 +11,10 @@ node_exporter_arch: "amd64"
 node_exporter_archive: "node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
 node_exporter_download_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_archive }}"
 
+# Checksum for the release archive, verified on download.
+# Format understood by get_url, e.g. "sha256:<hex>". Empty disables the check.
+node_exporter_archive_checksum: ""
+
 # Installation layout.
 node_exporter_install_dir: "/opt/node_exporter"
 node_exporter_version_dir: "{{ node_exporter_install_dir }}/node_exporter-{{ node_exporter_version }}"

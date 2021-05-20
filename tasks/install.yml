@@ -21,6 +21,7 @@
   ansible.builtin.get_url:
     url: "{{ node_exporter_download_url }}"
     dest: "/tmp/{{ node_exporter_archive }}"
+    checksum: "{{ node_exporter_archive_checksum or omit }}"
     mode: "0644"
 
 - name: Unarchive node_exporter into the versioned directory
