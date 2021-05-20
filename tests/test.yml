@@ -1,0 +1,9 @@
+---
+- name: Converge node_exporter role
+  hosts: all
+  become: true
+  roles:
+    - role: ansible-role-node-exporter
+      vars:
+        node_exporter_version: "1.1.2"
+        node_exporter_listen_address: "127.0.0.1:9100"
