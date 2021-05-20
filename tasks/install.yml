@@ -34,6 +34,15 @@
     group: root
     creates: "{{ node_exporter_version_dir }}/node_exporter"
 
+- name: Ensure textfile collector directory exists
+  ansible.builtin.file:
+    path: "{{ node_exporter_textfile_directory }}"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: "0755"
+  when: "'textfile' in node_exporter_enabled_collectors"
+
 - name: Link current release to the installed version
   ansible.builtin.file:
     src: "{{ node_exporter_version_dir }}"

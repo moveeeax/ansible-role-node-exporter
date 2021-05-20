@@ -26,6 +26,9 @@ node_exporter_listen_address: "0.0.0.0:9100"
 # Metrics path exposed by the exporter.
 node_exporter_metrics_path: "/metrics"
 
+# Directory scraped by the textfile collector for custom metrics.
+node_exporter_textfile_directory: "/var/lib/node_exporter/textfile_collector"
+
 # Collectors to explicitly enable. Rendered as --collector.<name> flags.
 node_exporter_enabled_collectors:
   - systemd

@@ -15,6 +15,9 @@ ExecStart={{ node_exporter_binary }} \
 {%- for collector in node_exporter_enabled_collectors %} \
     --collector.{{ collector }}
 {%- endfor %}
+{%- if 'textfile' in node_exporter_enabled_collectors %} \
+    --collector.textfile.directory={{ node_exporter_textfile_directory }}
+{%- endif %}
 {%- for collector in node_exporter_disabled_collectors %} \
     --no-collector.{{ collector }}
 {%- endfor %}
