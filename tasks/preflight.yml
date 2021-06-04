@@ -1,0 +1,15 @@
+---
+# Validate role inputs before making any changes to the host.
+
+- name: Assert a node_exporter version is set
+  ansible.builtin.assert:
+    that:
+      - node_exporter_version is defined
+      - node_exporter_version | length > 0
+    fail_msg: "node_exporter_version must be a non-empty string"
+
+- name: Assert the listen address includes a port
+  ansible.builtin.assert:
+    that:
+      - node_exporter_listen_address is match('^.*:[0-9]+$')
+    fail_msg: "node_exporter_listen_address must be in host:port form"

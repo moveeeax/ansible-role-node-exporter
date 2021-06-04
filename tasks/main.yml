@@ -1,6 +1,9 @@
 ---
 # tasks file for ansible-role-node-exporter
 
+- name: Validate role inputs
+  ansible.builtin.import_tasks: preflight.yml
+
 - name: Create service account
   ansible.builtin.import_tasks: user.yml
 
