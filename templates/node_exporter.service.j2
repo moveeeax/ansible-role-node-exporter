@@ -27,6 +27,16 @@ ExecStart={{ node_exporter_binary }} \
 
 Restart=on-failure
 RestartSec=5
+{% if node_exporter_harden_service %}
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ node_exporter_textfile_directory }}
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+{% endif %}
 
 [Install]
 WantedBy=multi-user.target

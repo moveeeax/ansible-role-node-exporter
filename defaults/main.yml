@@ -43,3 +43,6 @@ node_exporter_disabled_collectors: []
 
 # Any additional raw command-line flags to append.
 node_exporter_extra_flags: []
+
+# Apply systemd sandboxing directives to the service unit.
+node_exporter_harden_service: true
