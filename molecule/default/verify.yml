@@ -1,0 +1,23 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert node_exporter service is running
+      ansible.builtin.assert:
+        that:
+          - "'node_exporter.service' in ansible_facts.services"
+          - ansible_facts.services['node_exporter.service'].state == 'running'
+        fail_msg: "node_exporter service is not running"
+
+    - name: Check the metrics endpoint responds
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:9100/metrics"
+        status_code: 200
+      register: _metrics
+      until: _metrics.status == 200
+      retries: 5
+      delay: 3
