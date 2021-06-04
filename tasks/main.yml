@@ -3,12 +3,24 @@
 
 - name: Validate role inputs
   ansible.builtin.import_tasks: preflight.yml
+  tags:
+    - node_exporter
+    - preflight
 
 - name: Create service account
   ansible.builtin.import_tasks: user.yml
+  tags:
+    - node_exporter
+    - user
 
 - name: Install node_exporter binary
   ansible.builtin.import_tasks: install.yml
+  tags:
+    - node_exporter
+    - install
 
 - name: Configure node_exporter service
   ansible.builtin.import_tasks: service.yml
+  tags:
+    - node_exporter
+    - service
