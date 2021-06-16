@@ -1,0 +1,35 @@
+---
+name: Molecule
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  molecule:
+    name: Molecule test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v2
+        with:
+          path: "ansible-role-node-exporter"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install "ansible>=2.9,<2.11" "molecule[docker]"
+
+      - name: Run molecule test
+        run: molecule test
+        working-directory: "ansible-role-node-exporter"
+        env:
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
