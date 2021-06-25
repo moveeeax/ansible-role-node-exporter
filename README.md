@@ -1,5 +1,8 @@
 # ansible-role-node-exporter
 
+![CI](https://github.com/mtarassov/ansible-role-node-exporter/workflows/CI/badge.svg)
+![Molecule](https://github.com/mtarassov/ansible-role-node-exporter/workflows/Molecule/badge.svg)
+
 Ansible role that installs the [Prometheus node_exporter](https://github.com/prometheus/node_exporter)
 and runs it as a systemd service. The release archive is downloaded from
 GitHub, unpacked into a versioned directory, and exposed through a `current`
