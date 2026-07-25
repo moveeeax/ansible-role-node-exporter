@@ -1,0 +1,37 @@
+---
+# vars file for ansible-role-node-exporter
+#
+# Mapping from the architecture Ansible reports (ansible_facts.architecture)
+# to the architecture string Prometheus uses in its release archive names.
+# Only the mapping lives here so that `node_exporter_arch` itself stays a
+# default and remains overridable from playbook vars.
+node_exporter_arch_map:
+  x86_64: amd64
+  amd64: amd64
+  aarch64: arm64
+  arm64: arm64
+  armv7l: armv7
+  armv6l: armv6
+  armv5tel: armv5
+  i386: "386"
+  i686: "386"
+  ppc64: ppc64
+  ppc64le: ppc64le
+  s390x: s390x
+
+# Architectures Prometheus actually publishes Linux release archives for.
+# Used by the preflight assertion to fail early instead of 404ing on download.
+node_exporter_known_arches:
+  - "386"
+  - amd64
+  - arm64
+  - armv5
+  - armv6
+  - armv7
+  - mips
+  - mips64
+  - mips64le
+  - mipsle
+  - ppc64
+  - ppc64le
+  - s390x

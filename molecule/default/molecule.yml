@@ -4,12 +4,32 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: node-exporter-el8
-    image: "geerlingguy/docker-centos8-ansible:latest"
-    command: /usr/sbin/init
+  # One platform per family the role claims to support in meta/main.yml.
+  # Both images are multi-arch, so the suite runs on amd64 and arm64 hosts.
+  - name: node-exporter-rocky9
+    image: "geerlingguy/docker-rockylinux9-ansible:latest"
+    command: ""
     privileged: true
     pre_build_image: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+  - name: node-exporter-ubuntu2204
+    image: "geerlingguy/docker-ubuntu2204-ansible:latest"
+    command: ""
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
 provisioner:
   name: ansible
+  inventory:
+    group_vars:
+      all:
+        # The containers already run as root. Connecting as root makes the
+        # playbooks' `become: true` a no-op instead of shelling out to sudo,
+        # which is not reliably usable inside minimal EL container images.
+        ansible_user: root
 verifier:
   name: ansible

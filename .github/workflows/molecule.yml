@@ -11,25 +11,33 @@ name: Molecule
 
 jobs:
   molecule:
-    name: Molecule test
+    name: "Molecule: ${{ matrix.scenario }}"
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - default
+          - no-textfile
     steps:
       - name: Check out the codebase
-        uses: actions/checkout@v2
-        with:
-          path: "ansible-role-node-exporter"
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
+      # The old "molecule[docker]" extra was removed in molecule 5; the driver
+      # now ships in molecule-plugins. The previous ansible pin could not
+      # resolve against a current molecule either.
       - name: Install dependencies
-        run: pip install "ansible>=2.9,<2.11" "molecule[docker]"
+        run: |
+          pip install "ansible-core>=2.16" molecule "molecule-plugins[docker]"
+          ansible-galaxy collection install community.docker ansible.posix
 
       - name: Run molecule test
-        run: molecule test
-        working-directory: "ansible-role-node-exporter"
+        run: molecule test -s "${{ matrix.scenario }}"
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"

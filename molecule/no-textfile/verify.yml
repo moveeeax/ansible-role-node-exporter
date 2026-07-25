@@ -1,0 +1,78 @@
+---
+- name: Verify the service starts without the textfile collector
+  hosts: all
+  become: true
+  tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    # This is the assertion the regression is about: with the textfile
+    # collector off, the hardened unit must still start.
+    - name: Assert node_exporter is running
+      ansible.builtin.assert:
+        that:
+          - "'node_exporter.service' in ansible_facts.services"
+          - ansible_facts.services['node_exporter.service'].state == 'running'
+        fail_msg: >-
+          node_exporter is not running with the textfile collector disabled.
+          Check `systemctl status node_exporter` for a namespace setup failure
+          caused by ReadWritePaths pointing at a nonexistent directory.
+
+    # `systemd` manages state, it cannot read back unit properties.
+    - name: Read the unit result  # noqa: command-instead-of-module
+      ansible.builtin.command: systemctl show node_exporter --property=Result --value
+      register: _result
+      changed_when: false
+
+    - name: Assert the unit result is clean
+      ansible.builtin.assert:
+        that:
+          - _result.stdout | trim == 'success'
+        fail_msg: "node_exporter unit Result is '{{ _result.stdout | trim }}', expected success"
+
+    - name: Assert the textfile collector directory was not created
+      ansible.builtin.stat:
+        path: /var/lib/node_exporter/textfile_collector
+      register: _textfile_dir
+
+    - name: Confirm the role did not create the unused directory
+      ansible.builtin.assert:
+        that:
+          - not _textfile_dir.stat.exists
+        fail_msg: "Textfile collector directory exists even though the collector is disabled"
+
+    - name: Check the metrics endpoint responds
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:9100/metrics"
+        status_code: 200
+        return_content: true
+      register: _metrics
+      until: _metrics.status == 200
+      retries: 5
+      delay: 3
+
+    - name: Assert the endpoint really serves node_exporter metrics
+      ansible.builtin.assert:
+        that:
+          - "'node_exporter_build_info' in _metrics.content"
+        fail_msg: "The metrics endpoint responded but did not look like node_exporter"
+
+    - name: Read the rendered unit file
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/node_exporter.service
+      register: _unit
+
+    # Note: node_exporter enables the textfile collector by default, so leaving
+    # it out of node_exporter_enabled_collectors does not switch it off; use
+    # node_exporter_disabled_collectors for that. What must not happen is the
+    # role pointing the collector at, or sandboxing around, a directory it
+    # never created.
+    - name: Assert the unit references no textfile directory
+      vars:
+        unit: "{{ _unit.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'--collector.textfile.directory' not in unit"
+          - "'ReadWritePaths' not in unit"
+          - "'ProtectSystem=strict' in unit"
+        fail_msg: "Unit still references the unmanaged textfile directory:\n{{ unit }}"

@@ -9,19 +9,21 @@ name: CI
 
 jobs:
   lint:
-    name: Lint and syntax-check
+    name: Lint, syntax-check and template tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out the codebase
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
+      # ansible-lint needs a reasonably current ansible-core; the previous
+      # "ansible>=2.9,<2.11" pin could no longer resolve alongside it.
       - name: Install dependencies
-        run: pip install "ansible>=2.9,<2.11" ansible-lint yamllint
+        run: pip install "ansible-core>=2.16" ansible-lint yamllint
 
       - name: Run yamllint
         run: yamllint .
@@ -31,3 +33,9 @@ jobs:
 
       - name: Run syntax-check
         run: ansible-playbook --syntax-check -i tests/inventory tests/test.yml
+
+      # Renders the systemd unit template across several variable combinations
+      # and asserts on the result. Needs no container, so it gives fast
+      # feedback ahead of the molecule job.
+      - name: Run systemd unit template tests
+        run: ansible-playbook -i tests/inventory tests/render.yml

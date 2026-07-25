@@ -4,19 +4,38 @@
 # Version of node_exporter to install.
 node_exporter_version: "1.1.2"
 
-# Target architecture used to build the release archive name.
-node_exporter_arch: "amd64"
+# Target architecture used to build the release archive name. Derived from the
+# host's own architecture so that arm64/armv7 hosts do not silently receive an
+# amd64 binary; override explicitly to cross-install a different build.
+node_exporter_arch: "{{ node_exporter_arch_map.get(ansible_facts.get('architecture', 'x86_64'), ansible_facts.get('architecture', 'amd64')) }}"
+
+# Base URL for release downloads. Point this at an internal mirror if the
+# target hosts cannot reach github.com.
+node_exporter_release_base_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}"
 
 # Release archive name and download URL.
 node_exporter_archive: "node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
-node_exporter_download_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_archive }}"
+node_exporter_download_url: "{{ node_exporter_release_base_url }}/{{ node_exporter_archive }}"
 
-# Checksum for the release archive, verified on download.
-# Format understood by get_url, e.g. "sha256:<hex>". Empty disables the check.
+# Integrity verification of the downloaded archive.
+#
+# By default the checksum is looked up in the `sha256sums.txt` published
+# alongside every upstream release, so the download is verified out of the box.
+# The entry is matched on the basename of node_exporter_download_url, so a
+# mirror must keep the upstream archive filename for this to resolve.
+# Set node_exporter_archive_checksum to pin an exact digest instead
+# (format understood by get_url, e.g. "sha256:<hex>"); it takes precedence.
+# Setting BOTH to "" disables verification entirely and is strongly discouraged.
+node_exporter_checksum_url: "{{ node_exporter_release_base_url }}/sha256sums.txt"
 node_exporter_archive_checksum: ""
 
 # Installation layout.
 node_exporter_install_dir: "/opt/node_exporter"
+
+# Root-owned directory the release archive is downloaded into. Deliberately not
+# /tmp: a world-writable directory with a predictable filename lets any local
+# user pre-plant or symlink the download target.
+node_exporter_download_dir: "{{ node_exporter_install_dir }}/archives"
 node_exporter_version_dir: "{{ node_exporter_install_dir }}/node_exporter-{{ node_exporter_version }}"
 node_exporter_binary: "{{ node_exporter_install_dir }}/current/node_exporter"
 
@@ -25,7 +44,17 @@ node_exporter_user: "node_exporter"
 node_exporter_group: "node_exporter"
 
 # Address the exporter listens on.
+#
+# SECURITY: node_exporter serves unauthenticated metrics that describe the host
+# in detail (mounted filesystems, network interfaces and addresses, running
+# units, and with the processes collector, process names). The upstream default
+# below listens on every interface, so anyone who can reach port 9100 can read
+# all of it. Either restrict this to an address on your management network, or
+# firewall the port to the Prometheus server. See the Security section of the
+# README. Set node_exporter_warn_on_wildcard_listen to false to silence the
+# reminder emitted during preflight once you have done so.
 node_exporter_listen_address: "0.0.0.0:9100"
+node_exporter_warn_on_wildcard_listen: true
 
 # Metrics path exposed by the exporter.
 node_exporter_metrics_path: "/metrics"
