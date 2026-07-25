@@ -4,7 +4,7 @@ galaxy_info:
   # Without an explicit namespace, ansible-compat falls back to `author` and
   # rejects it as an invalid fully qualified role name, which stops molecule
   # from running at all.
-  namespace: mtarassov
+  namespace: moveeeax
   author: Michael Tarassov
   description: Install and configure the Prometheus node_exporter as a systemd service
   company: ""

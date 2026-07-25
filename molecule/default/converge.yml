@@ -6,4 +6,4 @@
     # Molecule installs the role under its fully qualified Galaxy name (built
     # from meta/main.yml namespace + role_name), which resolves regardless of
     # what the checkout directory happens to be called.
-    - role: mtarassov.node_exporter
+    - role: moveeeax.node_exporter

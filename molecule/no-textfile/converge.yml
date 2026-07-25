@@ -3,7 +3,7 @@
   hosts: all
   become: true
   roles:
-    - role: mtarassov.node_exporter
+    - role: moveeeax.node_exporter
       vars:
         node_exporter_enabled_collectors:
           - systemd
