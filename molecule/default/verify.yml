@@ -13,11 +13,85 @@
           - ansible_facts.services['node_exporter.service'].state == 'running'
         fail_msg: "node_exporter service is not running"
 
+    # `systemd` manages state, it cannot read back arbitrary unit properties,
+    # so querying them means shelling out to systemctl.
+    - name: Read the effective unit properties  # noqa: command-instead-of-module
+      ansible.builtin.command: "systemctl show node_exporter --property={{ item }} --value"
+      register: _props
+      changed_when: false
+      loop:
+        - UnitFileState
+        - User
+        - NoNewPrivileges
+        - ProtectSystem
+        - ProtectHome
+        - MainPID
+
+    - name: Turn the unit properties into a dict
+      ansible.builtin.set_fact:
+        unit_props: >-
+          {{ dict(_props.results | map(attribute='item')
+                  | zip(_props.results | map(attribute='stdout') | map('trim'))) }}
+
+    - name: Assert the service does not run as root and is sandboxed
+      ansible.builtin.assert:
+        that:
+          # A unit that is started but not enabled silently disappears on
+          # reboot, which is exactly when nobody is watching the dashboards.
+          - unit_props.UnitFileState == 'enabled'
+          - unit_props.User == 'node_exporter'
+          - unit_props.NoNewPrivileges == 'yes'
+          - unit_props.ProtectSystem == 'strict'
+          - unit_props.ProtectHome == 'yes'
+        fail_msg: "Unexpected unit properties: {{ unit_props }}"
+
+    - name: Confirm the running process is owned by the service account
+      ansible.builtin.command: "ps -o user= -p {{ unit_props.MainPID }}"
+      register: _proc_owner
+      changed_when: false
+
+    - name: Assert the process owner is not root
+      ansible.builtin.assert:
+        that:
+          - _proc_owner.stdout | trim == 'node_exporter'
+        fail_msg: "node_exporter runs as '{{ _proc_owner.stdout | trim }}', expected node_exporter"
+
     - name: Check the metrics endpoint responds
       ansible.builtin.uri:
         url: "http://127.0.0.1:9100/metrics"
         status_code: 200
+        return_content: true
       register: _metrics
       until: _metrics.status == 200
       retries: 5
       delay: 3
+
+    - name: Assert the endpoint really serves node_exporter metrics
+      ansible.builtin.assert:
+        that:
+          - "'node_exporter_build_info' in _metrics.content"
+        fail_msg: "The metrics endpoint responded but did not look like node_exporter"
+
+    - name: Look for the release archive in the root-owned download directory
+      ansible.builtin.find:
+        paths: /opt/node_exporter/archives
+        patterns: "node_exporter-*.tar.gz"
+        file_type: file
+      register: _archive
+
+    - name: Look for a stray release archive in world-writable /tmp
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "node_exporter-*.tar.gz"
+        file_type: file
+      register: _tmp_archive
+
+    - name: Assert the archive was staged in a root-owned directory, not /tmp
+      ansible.builtin.assert:
+        that:
+          - _archive.matched > 0
+          - _archive.files[0].pw_name == 'root'
+          - _tmp_archive.matched == 0
+        fail_msg: >-
+          Release archive staging is wrong. Root-owned dir matched
+          {{ _archive.matched }}, /tmp matched {{ _tmp_archive.matched }}.

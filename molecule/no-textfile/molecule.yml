@@ -1,0 +1,29 @@
+---
+# Regression scenario: the textfile collector is disabled.
+#
+# The role only creates the textfile collector directory when that collector is
+# enabled, but the hardened unit used to emit ReadWritePaths= for it
+# unconditionally. systemd refuses to start a unit whose ReadWritePaths= names
+# a path that does not exist, so this combination broke the service. The
+# default scenario cannot catch it because it always enables textfile.
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: node-exporter-no-textfile
+    image: "geerlingguy/docker-rockylinux9-ansible:latest"
+    command: ""
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        ansible_user: root
+verifier:
+  name: ansible

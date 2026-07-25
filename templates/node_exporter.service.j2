@@ -31,11 +31,19 @@ RestartSec=5
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths={{ node_exporter_textfile_directory }}
 PrivateTmp=true
 ProtectControlGroups=true
 ProtectKernelModules=true
 ProtectKernelTunables=true
+ProtectHostname=true
+ProtectClock=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RemoveIPC=true
+{% if 'textfile' in node_exporter_enabled_collectors %}
+ReadWritePaths={{ node_exporter_textfile_directory }}
+{% endif %}
 {% endif %}
 
 [Install]
