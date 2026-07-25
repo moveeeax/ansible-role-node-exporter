@@ -1,0 +1,206 @@
+---
+# Controller-local regression tests for the systemd unit template.
+#
+# These render templates/node_exporter.service.j2 against several variable
+# combinations and assert on the result. They need no root, no systemd and no
+# container, so they run anywhere ansible-playbook does:
+#
+#   ansible-playbook -i tests/inventory tests/render.yml
+#
+# Molecule still covers "does the service actually start"; this covers the
+# variable combinations that are cheap to get wrong and expensive to notice.
+
+- name: Render the node_exporter systemd unit and assert on the result
+  hosts: all
+  gather_facts: true
+  become: false
+
+  vars_files:
+    - ../defaults/main.yml
+    - ../vars/main.yml
+
+  vars:
+    # Absolute path to the role root, so the template src needs no "..".
+    role_root: "{{ playbook_dir | dirname }}"
+    unit_template: "{{ role_root }}/templates/node_exporter.service.j2"
+    # A backslash line-continuation immediately followed by a blank line, i.e.
+    # an ExecStart whose last argument was dropped, leaving a dangling "\".
+    _dangling_continuation: "\\\n\n"
+
+  tasks:
+    - name: Create a scratch directory for rendered units
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: node-exporter-render
+      register: _scratch
+      changed_when: false
+
+    # ------------------------------------------------------------------
+    # Scenario 1: defaults
+    # ------------------------------------------------------------------
+    - name: Render the unit with role defaults
+      ansible.builtin.template:
+        src: "{{ unit_template }}"
+        dest: "{{ _scratch.path }}/defaults.service"
+        mode: "0644"
+      changed_when: false
+
+    - name: Read back the defaults unit
+      ansible.builtin.slurp:
+        src: "{{ _scratch.path }}/defaults.service"
+      register: _defaults_raw
+      changed_when: false
+
+    - name: Assert the defaults unit is well formed
+      vars:
+        unit: "{{ _defaults_raw.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          # Runs as the dedicated unprivileged account, never as root.
+          - "'User=node_exporter' in unit"
+          - "'Group=node_exporter' in unit"
+          - "'User=root' not in unit"
+          # Core flags.
+          - "'--web.listen-address=0.0.0.0:9100' in unit"
+          - "'--web.telemetry-path=/metrics' in unit"
+          - "'--collector.systemd' in unit"
+          - "'--collector.textfile' in unit"
+          - "'--collector.textfile.directory=/var/lib/node_exporter/textfile_collector' in unit"
+          # Sandboxing is on by default.
+          - "'NoNewPrivileges=true' in unit"
+          - "'ProtectSystem=strict' in unit"
+          - "'ProtectHome=true' in unit"
+          - "'PrivateTmp=true' in unit"
+          # ProtectSystem=strict makes /var read-only, so the textfile
+          # directory has to be granted back explicitly.
+          - "'ReadWritePaths=/var/lib/node_exporter/textfile_collector' in unit"
+          # The unit must actually be installable.
+          - "'WantedBy=multi-user.target' in unit"
+          - _dangling_continuation not in unit
+        fail_msg: "Rendered unit with defaults is wrong:\n{{ unit }}"
+        success_msg: "Defaults render a valid, sandboxed, non-root unit"
+
+    # ------------------------------------------------------------------
+    # Scenario 2: textfile collector disabled
+    #
+    # Regression test. ReadWritePaths= used to be emitted unconditionally while
+    # the directory it names is only created when the textfile collector is
+    # enabled. systemd refuses to start a unit whose ReadWritePaths= points at
+    # a path that does not exist, so disabling the textfile collector made the
+    # service fail to start with a mount-namespace error.
+    # ------------------------------------------------------------------
+    - name: Render the unit with the textfile collector disabled
+      vars:
+        node_exporter_enabled_collectors:
+          - systemd
+      ansible.builtin.template:
+        src: "{{ unit_template }}"
+        dest: "{{ _scratch.path }}/no-textfile.service"
+        mode: "0644"
+      changed_when: false
+
+    - name: Read back the no-textfile unit
+      ansible.builtin.slurp:
+        src: "{{ _scratch.path }}/no-textfile.service"
+      register: _no_textfile_raw
+      changed_when: false
+
+    - name: Assert no ReadWritePaths is emitted for a directory the role never creates
+      vars:
+        unit: "{{ _no_textfile_raw.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'ReadWritePaths' not in unit"
+          - "'--collector.textfile' not in unit"
+          - "'--collector.systemd' in unit"
+          # Hardening itself must still be applied.
+          - "'ProtectSystem=strict' in unit"
+          - _dangling_continuation not in unit
+        fail_msg: >-
+          Unit references ReadWritePaths for the textfile collector directory,
+          but the role only creates that directory when the textfile collector
+          is enabled. systemd will refuse to start this unit:
+          {{ unit }}
+        success_msg: "Disabling the textfile collector drops ReadWritePaths"
+
+    # ------------------------------------------------------------------
+    # Scenario 3: hardening turned off
+    # ------------------------------------------------------------------
+    - name: Render the unit with hardening disabled
+      vars:
+        node_exporter_harden_service: false
+      ansible.builtin.template:
+        src: "{{ unit_template }}"
+        dest: "{{ _scratch.path }}/unhardened.service"
+        mode: "0644"
+      changed_when: false
+
+    - name: Read back the unhardened unit
+      ansible.builtin.slurp:
+        src: "{{ _scratch.path }}/unhardened.service"
+      register: _unhardened_raw
+      changed_when: false
+
+    - name: Assert hardening directives are absent when disabled
+      vars:
+        unit: "{{ _unhardened_raw.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'ProtectSystem' not in unit"
+          - "'NoNewPrivileges' not in unit"
+          - "'ReadWritePaths' not in unit"
+          # The service itself still has to be complete.
+          - "'ExecStart=' in unit"
+          - "'WantedBy=multi-user.target' in unit"
+          - _dangling_continuation not in unit
+        fail_msg: "Hardening directives leaked into an unhardened unit:\n{{ unit }}"
+        success_msg: "node_exporter_harden_service=false removes the sandbox directives"
+
+    # ------------------------------------------------------------------
+    # Scenario 4: every list-valued knob populated at once
+    # ------------------------------------------------------------------
+    - name: Render the unit with disabled collectors and extra flags
+      vars:
+        node_exporter_listen_address: "127.0.0.1:19100"
+        node_exporter_metrics_path: "/node-metrics"
+        node_exporter_enabled_collectors:
+          - systemd
+          - textfile
+          - processes
+        node_exporter_disabled_collectors:
+          - mdadm
+          - nfs
+        node_exporter_extra_flags:
+          - "--log.level=warn"
+      ansible.builtin.template:
+        src: "{{ unit_template }}"
+        dest: "{{ _scratch.path }}/full.service"
+        mode: "0644"
+      changed_when: false
+
+    - name: Read back the fully populated unit
+      ansible.builtin.slurp:
+        src: "{{ _scratch.path }}/full.service"
+      register: _full_raw
+      changed_when: false
+
+    - name: Assert every configured flag reaches ExecStart
+      vars:
+        unit: "{{ _full_raw.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'--web.listen-address=127.0.0.1:19100' in unit"
+          - "'--web.telemetry-path=/node-metrics' in unit"
+          - "'--collector.processes' in unit"
+          - "'--no-collector.mdadm' in unit"
+          - "'--no-collector.nfs' in unit"
+          - "'--log.level=warn' in unit"
+          - _dangling_continuation not in unit
+        fail_msg: "Configured flags did not reach ExecStart:\n{{ unit }}"
+        success_msg: "Collector and extra-flag lists render into ExecStart"
+
+    - name: Remove the scratch directory
+      ansible.builtin.file:
+        path: "{{ _scratch.path }}"
+        state: absent
+      changed_when: false

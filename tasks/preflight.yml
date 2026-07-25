@@ -13,3 +13,34 @@
     that:
       - node_exporter_listen_address is match('^.*:[0-9]+$')
     fail_msg: "node_exporter_listen_address must be in host:port form"
+
+- name: Assert the target architecture has an upstream release build
+  ansible.builtin.assert:
+    that:
+      - node_exporter_arch in node_exporter_known_arches
+    fail_msg: >-
+      node_exporter_arch resolved to '{{ node_exporter_arch }}', which upstream
+      does not publish a Linux release archive for. Detected host architecture
+      was '{{ ansible_facts.get('architecture', 'unknown') }}'. Set
+      node_exporter_arch explicitly to one of:
+      {{ node_exporter_known_arches | join(', ') }}.
+
+- name: Assert the archive download will be integrity checked
+  ansible.builtin.assert:
+    that:
+      - (node_exporter_archive_checksum | length > 0) or (node_exporter_checksum_url | length > 0)
+    fail_msg: >-
+      Both node_exporter_archive_checksum and node_exporter_checksum_url are
+      empty, which would install an unverified binary fetched over the network.
+      Set one of them.
+
+- name: Warn that the exporter will listen on every interface
+  ansible.builtin.debug:
+    msg: >-
+      node_exporter will listen on {{ node_exporter_listen_address }}, exposing
+      unauthenticated host metrics on every interface. Restrict
+      node_exporter_listen_address to a management address, or firewall the port
+      to your Prometheus server.
+  when:
+    - node_exporter_warn_on_wildcard_listen | bool
+    - node_exporter_listen_address is match('^(0\.0\.0\.0|\[::\]|\*)?:[0-9]+$')

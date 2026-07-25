@@ -4,3 +4,7 @@ __pycache__/
 .cache/
 .molecule/
 *.log
+
+# Role symlinks created in-tree by ansible-lint / molecule when they resolve
+# the role's own fully qualified name.
+.ansible/

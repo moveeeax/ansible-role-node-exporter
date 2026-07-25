@@ -1,0 +1,13 @@
+---
+- name: Converge with the textfile collector disabled
+  hosts: all
+  become: true
+  roles:
+    - role: mtarassov.node_exporter
+      vars:
+        node_exporter_enabled_collectors:
+          - systemd
+        # Hardening must stay on: it is the combination of ProtectSystem=strict
+        # and a ReadWritePaths= entry for a directory that is never created
+        # that breaks the unit.
+        node_exporter_harden_service: true

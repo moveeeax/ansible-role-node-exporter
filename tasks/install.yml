@@ -17,16 +17,36 @@
     group: root
     mode: "0755"
 
+- name: Ensure the archive download directory exists
+  ansible.builtin.file:
+    path: "{{ node_exporter_download_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# The checksum is verified by get_url before the archive is unpacked. An
+# explicit digest wins; otherwise the sha256sums.txt published with the release
+# is used, and get_url looks the entry up by the basename of the download URL.
+# Verifying also makes this task idempotent: a matching archive is not
+# re-downloaded on every run.
 - name: Download node_exporter release archive
   ansible.builtin.get_url:
     url: "{{ node_exporter_download_url }}"
-    dest: "/tmp/{{ node_exporter_archive }}"
-    checksum: "{{ node_exporter_archive_checksum or omit }}"
+    dest: "{{ node_exporter_download_dir }}/{{ node_exporter_archive }}"
+    checksum: >-
+      {{ node_exporter_archive_checksum
+         if node_exporter_archive_checksum | length > 0
+         else ('sha256:' + node_exporter_checksum_url
+               if node_exporter_checksum_url | length > 0
+               else omit) }}
+    owner: root
+    group: root
     mode: "0644"
 
 - name: Unarchive node_exporter into the versioned directory
   ansible.builtin.unarchive:
-    src: "/tmp/{{ node_exporter_archive }}"
+    src: "{{ node_exporter_download_dir }}/{{ node_exporter_archive }}"
     dest: "{{ node_exporter_version_dir }}"
     remote_src: true
     extra_opts:

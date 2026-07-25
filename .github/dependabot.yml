@@ -1,0 +1,11 @@
+---
+version: 2
+updates:
+  # Keeps the workflow actions current. The previous v2 pins for
+  # actions/checkout and actions/setup-python went stale unnoticed.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
