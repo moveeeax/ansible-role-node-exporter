@@ -25,6 +25,21 @@
       node_exporter_arch explicitly to one of:
       {{ node_exporter_known_arches | join(', ') }}.
 
+- name: Assert no collector is both enabled and disabled at once
+  vars:
+    node_exporter_conflicting_collectors: >-
+      {{ node_exporter_enabled_collectors
+         | intersect(node_exporter_disabled_collectors) }}
+  ansible.builtin.assert:
+    that:
+      - node_exporter_conflicting_collectors | length == 0
+    fail_msg: >-
+      {{ node_exporter_conflicting_collectors | join(', ') }} listed in both
+      node_exporter_enabled_collectors and node_exporter_disabled_collectors.
+      The unit would be given both --collector.<name> and
+      --no-collector.<name> for the same collector, which is contradictory;
+      remove it from one list.
+
 - name: Assert the archive download will be integrity checked
   ansible.builtin.assert:
     that:

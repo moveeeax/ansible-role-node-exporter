@@ -80,6 +80,9 @@ a collector you need is incompatible with them.
 | `node_exporter_download_url` | `<release_base_url>/<archive>` | Full download URL for the release archive. |
 | `node_exporter_checksum_url` | `<release_base_url>/sha256sums.txt` | Checksum file the archive is verified against. Matched on the basename of the download URL. |
 | `node_exporter_archive_checksum` | `""` | Exact digest to pin instead, e.g. `sha256:<hex>`. Takes precedence over the checksum URL. |
+| `node_exporter_download_timeout` | `30` | Seconds allowed for a single download attempt. |
+| `node_exporter_download_retries` | `3` | Times to retry the download after a transient failure. |
+| `node_exporter_download_retry_delay` | `5` | Seconds to wait between download retries. |
 | `node_exporter_install_dir` | `/opt/node_exporter` | Base installation directory. |
 | `node_exporter_download_dir` | `<install_dir>/archives` | Root-owned directory the archive is staged in. |
 | `node_exporter_version_dir` | `<install_dir>/node_exporter-<version>` | Versioned directory the archive is unpacked into. |
@@ -135,6 +138,10 @@ ansible-playbook --syntax-check -i tests/inventory tests/test.yml
 # Renders the systemd unit across several variable combinations and asserts on
 # the result. No container or root required.
 ansible-playbook -i tests/inventory tests/render.yml
+
+# Exercises the preflight assertions, including that a collector cannot be
+# listed as both enabled and disabled. No container or root required.
+ansible-playbook -i tests/inventory tests/preflight.yml
 
 # Full converge, idempotence and verify against real systemd in containers.
 molecule test -s default      # Rocky Linux 9 and Ubuntu 22.04
