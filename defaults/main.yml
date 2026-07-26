@@ -29,6 +29,13 @@ node_exporter_download_url: "{{ node_exporter_release_base_url }}/{{ node_export
 node_exporter_checksum_url: "{{ node_exporter_release_base_url }}/sha256sums.txt"
 node_exporter_archive_checksum: ""
 
+# Network resilience for the release download. A transient failure (DNS
+# hiccup, GitHub throttling, a flaky mirror) should not fail the whole run
+# when a short retry would succeed; timeout bounds each individual attempt.
+node_exporter_download_timeout: 30
+node_exporter_download_retries: 3
+node_exporter_download_retry_delay: 5
+
 # Installation layout.
 node_exporter_install_dir: "/opt/node_exporter"
 

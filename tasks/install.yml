@@ -30,6 +30,13 @@
 # is used, and get_url looks the entry up by the basename of the download URL.
 # Verifying also makes this task idempotent: a matching archive is not
 # re-downloaded on every run.
+#
+# Retried with backoff: a release download is exactly the kind of one-shot
+# network call that fails transiently (DNS hiccup, GitHub throttling, a
+# mirror momentarily unreachable) and there is nothing to roll back, so
+# treating a single failure as fatal wastes the rest of an otherwise-healthy
+# run. get_url's own `timeout` only bounds a single attempt, not the request
+# as a whole.
 - name: Download node_exporter release archive
   ansible.builtin.get_url:
     url: "{{ node_exporter_download_url }}"
@@ -43,6 +50,11 @@
     owner: root
     group: root
     mode: "0644"
+    timeout: "{{ node_exporter_download_timeout }}"
+  register: _node_exporter_download
+  until: _node_exporter_download is succeeded
+  retries: "{{ node_exporter_download_retries }}"
+  delay: "{{ node_exporter_download_retry_delay }}"
 
 - name: Unarchive node_exporter into the versioned directory
   ansible.builtin.unarchive:

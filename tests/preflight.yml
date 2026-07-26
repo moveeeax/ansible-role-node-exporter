@@ -1,0 +1,63 @@
+---
+# Controller-local tests for the assertions in tasks/preflight.yml.
+#
+# These run the preflight checks directly against valid and invalid variable
+# combinations. No install, no root and no systemd, so they run anywhere
+# ansible-playbook does:
+#
+#   ansible-playbook -i tests/inventory tests/preflight.yml
+
+- name: Exercise the preflight assertions against valid and invalid input
+  hosts: all
+  gather_facts: true
+  become: false
+
+  vars_files:
+    - ../defaults/main.yml
+    - ../vars/main.yml
+
+  vars:
+    # Absolute path to the role root, so the include needs no "..".
+    role_root: "{{ playbook_dir | dirname }}"
+    preflight_tasks: "{{ role_root }}/tasks/preflight.yml"
+
+  tasks:
+    # ------------------------------------------------------------------
+    # Scenario 1: role defaults must pass preflight untouched.
+    # ------------------------------------------------------------------
+    - name: Run preflight with role defaults
+      ansible.builtin.include_tasks: "{{ preflight_tasks }}"
+
+    # ------------------------------------------------------------------
+    # Scenario 2: a collector listed as both enabled and disabled must be
+    # rejected before anything is downloaded or installed. Left unchecked,
+    # it would only surface later as a rendered unit with contradictory
+    # --collector.mdadm / --no-collector.mdadm flags on the same
+    # ExecStart line.
+    # ------------------------------------------------------------------
+    - name: Run preflight with a collector listed as both enabled and disabled
+      vars:
+        node_exporter_enabled_collectors:
+          - systemd
+          - mdadm
+        node_exporter_disabled_collectors:
+          - mdadm
+      block:
+        - name: Include preflight (expected to fail)
+          ansible.builtin.include_tasks: "{{ preflight_tasks }}"
+
+        - name: Fail the test because preflight should have rejected this
+          ansible.builtin.fail:
+            msg: preflight.yml accepted a collector listed as both enabled and disabled
+      rescue:
+        - name: Assert the failure was the expected collector-overlap assertion
+          ansible.builtin.assert:
+            that:
+              - "'mdadm' in ansible_failed_result.msg"
+              - >-
+                'node_exporter_enabled_collectors and
+                node_exporter_disabled_collectors' in ansible_failed_result.msg
+            fail_msg: >-
+              preflight.yml failed as expected, but not for the reason under
+              test: {{ ansible_failed_result.msg }}
+            success_msg: preflight rejects a collector listed as both enabled and disabled

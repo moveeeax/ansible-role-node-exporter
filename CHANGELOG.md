@@ -22,6 +22,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Both CI workflows installed `ansible>=2.9,<2.11`, which can no longer resolve
   against current `ansible-lint` or `molecule`; the molecule job also used the
   `molecule[docker]` extra that was removed in molecule 5.
+- `meta/main.yml` still listed EL 7 and Ubuntu bionic as supported platforms
+  even though the molecule default scenario moved to Rocky Linux 9 and Ubuntu
+  22.04; nothing in CI had tested the old platforms since. Updated the
+  declared platform list to match what is actually exercised.
+- Preflight now rejects a collector listed in both
+  `node_exporter_enabled_collectors` and `node_exporter_disabled_collectors`
+  instead of silently rendering both `--collector.<name>` and
+  `--no-collector.<name>` for it on the same `ExecStart` line.
 
 ### Security
 
@@ -43,6 +51,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   across several variable combinations and asserts on the output.
 - A `no-textfile` molecule scenario covering the regression above.
 - `node_exporter_release_base_url` for pointing the role at an internal mirror.
+- `tests/preflight.yml`, a container-free test that exercises the preflight
+  assertions, including the collector-overlap check above.
+- The release download now retries on transient failure instead of failing
+  the whole run on the first blip, controlled by
+  `node_exporter_download_timeout`, `node_exporter_download_retries` and
+  `node_exporter_download_retry_delay`.
 
 ### Changed
 
