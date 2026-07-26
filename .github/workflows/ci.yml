@@ -39,3 +39,8 @@ jobs:
       # feedback ahead of the molecule job.
       - name: Run systemd unit template tests
         run: ansible-playbook -i tests/inventory tests/render.yml
+
+      # Exercises the preflight assertions, including the collector-overlap
+      # check, the same way the template tests above exercise the unit.
+      - name: Run preflight assertion tests
+        run: ansible-playbook -i tests/inventory tests/preflight.yml

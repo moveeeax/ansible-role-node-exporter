@@ -10,15 +10,23 @@ galaxy_info:
   company: ""
   license: MIT
   min_ansible_version: "2.9"
+  # Kept in sync with molecule/default/molecule.yml, which is what actually
+  # exercises these platforms in CI. EL 7 and Ubuntu bionic used to be listed
+  # here but nothing has tested them since the default scenario moved to
+  # Rocky Linux 9 and Ubuntu 22.04 (see CHANGELOG.md); claiming support for
+  # platforms CI never runs against is misleading, particularly for the
+  # systemd sandboxing directives applied when node_exporter_harden_service
+  # is true, since older systemd releases silently ignore directives they do
+  # not recognize instead of failing loudly.
   platforms:
     - name: EL
       versions:
-        - "7"
         - "8"
+        - "9"
     - name: Ubuntu
       versions:
-        - bionic
         - focal
+        - jammy
   galaxy_tags:
     - monitoring
     - prometheus
