@@ -1,11 +1,17 @@
----
+# Monthly, with patch and minor updates grouped into one PR each; majors
+# come one per PR. Patch PRs merge themselves once CI passes
+# (dependabot-auto-merge.yml).
 version: 2
+
 updates:
-  # Keeps the workflow actions current. The previous v2 pins for
-  # actions/checkout and actions/setup-python went stale unnoticed.
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: /
     schedule:
       interval: monthly
     commit-message:
       prefix: "ci"
+    groups:
+      patch:
+        update-types: [patch]
+      minor:
+        update-types: [minor]
