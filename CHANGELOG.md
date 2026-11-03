@@ -68,6 +68,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- CI and molecule workflows run on Python 3.13 (current ansible-core needs
+  3.13 or newer; on 3.11 pip stops at 2.19), use `actions/checkout` v7.0.1 and
+  `actions/setup-python` v7.1.0 pinned by commit SHA, and declare read-only
+  `contents` permissions.
+- Molecule images are pinned by digest instead of `:latest`.
 - The molecule default scenario now covers Rocky Linux 9 and Ubuntu 22.04 on
   multi-arch images, replacing the end-of-life CentOS 8 platform.
 - Molecule verification additionally asserts the service is enabled at boot,
