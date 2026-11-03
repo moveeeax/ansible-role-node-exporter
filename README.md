@@ -73,7 +73,7 @@ a collector you need is incompatible with them.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `node_exporter_version` | `1.1.2` | Release version to install. |
+| `node_exporter_version` | `1.12.1` | Release version to install. |
 | `node_exporter_arch` | detected from the host | Architecture used to build the archive name, mapped from `ansible_facts.architecture` (e.g. `aarch64` → `arm64`). Override to cross-install. |
 | `node_exporter_release_base_url` | GitHub release URL | Base URL for the archive and checksum file. Point at an internal mirror if needed. |
 | `node_exporter_archive` | `node_exporter-<version>.linux-<arch>.tar.gz` | Release archive filename. |
@@ -116,7 +116,7 @@ in `node_exporter_disabled_collectors`, which renders `--no-collector.<name>`.
   roles:
     - role: ansible-role-node-exporter
       vars:
-        node_exporter_version: "1.1.2"
+        node_exporter_version: "1.12.1"
         # Bind to this host's management address rather than every interface.
         node_exporter_listen_address: "{{ ansible_default_ipv4.address }}:9100"
         node_exporter_enabled_collectors:

@@ -2,7 +2,7 @@
 # defaults file for ansible-role-node-exporter
 
 # Version of node_exporter to install.
-node_exporter_version: "1.1.2"
+node_exporter_version: "1.12.1"
 
 # Target architecture used to build the release archive name. Derived from the
 # host's own architecture so that arm64/armv7 hosts do not silently receive an

@@ -33,6 +33,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Security
 
+- The default `node_exporter_version` moves from 1.1.2 (2021) to 1.12.1, the
+  current upstream release. Hosts that do not pin a version are upgraded on
+  the next run.
 - The release archive is now verified against the `sha256sums.txt` published
   with each upstream release by default, instead of being installed unverified.
   `node_exporter_archive_checksum` still pins an exact digest.
