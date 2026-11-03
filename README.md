@@ -10,7 +10,8 @@ symlink so that upgrades and rollbacks are a matter of flipping the link.
 
 ## Requirements
 
-- Ansible 2.9 or newer.
+- Ansible 2.10 or newer (the tasks use `ansible.builtin.*` names). CI runs a
+  current ansible-core.
 - A target host running systemd (see supported platforms in `meta/main.yml`).
 - Network access from the target host to `github.com`, or an internal mirror
   configured through `node_exporter_release_base_url`.

@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   even though the molecule default scenario moved to Rocky Linux 9 and Ubuntu
   22.04; nothing in CI had tested the old platforms since. Updated the
   declared platform list to match what is actually exercised.
+- `meta/main.yml` declared `min_ansible_version: 2.9`, but the tasks use
+  `ansible.builtin.*` names that only resolve from 2.10 on. Raised to 2.10.
+- `meta/main.yml` still listed EL 8 and Ubuntu focal, which molecule does not
+  run; focal is also past end of standard support. The list now names only
+  EL 9 and Ubuntu jammy, the two platforms CI exercises.
 - Preflight now rejects a collector listed in both
   `node_exporter_enabled_collectors` and `node_exporter_disabled_collectors`
   instead of silently rendering both `--collector.<name>` and
