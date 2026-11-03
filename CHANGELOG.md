@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-03
+
 ### Fixed
 
 - The hardened systemd unit emitted `ReadWritePaths=` for the textfile
@@ -26,6 +28,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   even though the molecule default scenario moved to Rocky Linux 9 and Ubuntu
   22.04; nothing in CI had tested the old platforms since. Updated the
   declared platform list to match what is actually exercised.
+- `meta/main.yml` declared `min_ansible_version: 2.9`, but the tasks use
+  `ansible.builtin.*` names that only resolve from 2.10 on. Raised to 2.10.
+- `meta/main.yml` still listed EL 8 and Ubuntu focal, which molecule does not
+  run; focal is also past end of standard support. The list now names only
+  EL 9 and Ubuntu jammy, the two platforms CI exercises.
 - Preflight now rejects a collector listed in both
   `node_exporter_enabled_collectors` and `node_exporter_disabled_collectors`
   instead of silently rendering both `--collector.<name>` and
@@ -33,6 +40,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Security
 
+- The default `node_exporter_version` moves from 1.1.2 (2021) to 1.12.1, the
+  current upstream release. Hosts that do not pin a version are upgraded on
+  the next run.
 - The release archive is now verified against the `sha256sums.txt` published
   with each upstream release by default, instead of being installed unverified.
   `node_exporter_archive_checksum` still pins an exact digest.
@@ -60,6 +70,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- CI and molecule workflows run on Python 3.13 (current ansible-core needs
+  3.13 or newer; on 3.11 pip stops at 2.19), use `actions/checkout` v7.0.1 and
+  `actions/setup-python` v7.1.0 pinned by commit SHA, and declare read-only
+  `contents` permissions.
+- Molecule images are pinned by digest instead of `:latest`.
 - The molecule default scenario now covers Rocky Linux 9 and Ubuntu 22.04 on
   multi-arch images, replacing the end-of-life CentOS 8 platform.
 - Molecule verification additionally asserts the service is enabled at boot,

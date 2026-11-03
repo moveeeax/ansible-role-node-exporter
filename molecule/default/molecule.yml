@@ -6,8 +6,11 @@ driver:
 platforms:
   # One platform per family the role claims to support in meta/main.yml.
   # Both images are multi-arch, so the suite runs on amd64 and arm64 hosts.
+  # Images are pinned to the digest of their `latest` multi-arch manifest so
+  # runs are reproducible. Dependabot does not watch these files: refresh the
+  # digests by hand, together with molecule/no-textfile/molecule.yml.
   - name: node-exporter-rocky9
-    image: "geerlingguy/docker-rockylinux9-ansible:latest"
+    image: "geerlingguy/docker-rockylinux9-ansible@sha256:1206a0503dfbba2061911879271831d6d4d4a92e7de6ee52710098eb8815b8c9"
     command: ""
     privileged: true
     pre_build_image: true
@@ -15,7 +18,7 @@ platforms:
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
   - name: node-exporter-ubuntu2204
-    image: "geerlingguy/docker-ubuntu2204-ansible:latest"
+    image: "geerlingguy/docker-ubuntu2204-ansible@sha256:b16e65c3a0a160b36c2b4859ab8ce1993f71072e56624549e1cb375cb6c08b4d"
     command: ""
     privileged: true
     pre_build_image: true
