@@ -156,3 +156,7 @@ MIT
 ## Author Information
 
 Michael Tarassov
+
+---
+
+**Archived on 2026-11-05.** the official `prometheus.prometheus.node_exporter` role (the successor to the archived cloudalchemy role) already covers install, systemd, checksum-verified downloads, TLS and basic auth. This role's extras (a versioned-dir `current` symlink, sandboxing) are not enough to justify maintaining a competing role. If it is kept as a portfolio piece, build only the two features below.
